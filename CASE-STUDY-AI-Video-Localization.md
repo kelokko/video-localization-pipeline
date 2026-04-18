@@ -96,6 +96,8 @@ Even with length-aware prompts, some segments still came out too long for their 
 
 This two-pass approach lets the translator focus on accuracy and naturalness first, then surgically fixes length issues — typically only 10-20% of segments need shortening.
 
+I later learned this is called the **generate-then-edit paradigm**, a [well-established principle in NLP research](https://www.emergentmind.com/topics/generate-then-edit-paradigm). Academic work confirms that forcing constraints during generation "may hurt the expressiveness of the model and lead to potential performance degradation, impacting the fluency and naturalness of the output" ([Garbacea & Mei, 2022](https://arxiv.org/abs/2206.05395)). I reinvented it by accident when I got frustrated enough with constrained translation results to try something different — which I think says something about why the pattern exists in the first place.
+
 ### Step 5: Voice Cloning & TTS Generation
 
 **Voice Cloning:** Uploaded English audio to ElevenLabs, which analyzed and created a voice profile mimicking the original narrator.
