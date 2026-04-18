@@ -10,11 +10,11 @@
 
 ## The Challenge
 
-Medikro Academy, an e-learning platform for medical professionals, received user feedback requesting Finnish-language videos. The course contained **30 instructional videos** featuring a single narrator (Esko), originally in English.
+Medikro Academy, an e-learning platform for medical professionals, received user feedback requesting Finnish-language videos. The course contained **26 instructional videos** (~1 hour total, ~5,000 words) featuring a single narrator (Esko), originally in English.
 
 **Initial options seemed impractical:**
 - Re-recording with Esko: Weeks of studio time + editing
-- Professional dubbing service: €5,000-15,000 estimated
+- Professional dubbing service: €4,000-6,000 estimated (based on industry rates)
 - Manual AI dubbing (ElevenLabs Dubbing Studio): Fast but poor sync, no terminology control
 
 **Key constraints:**
@@ -131,11 +131,12 @@ The translator was instructed to use exact thesaurus matches and maintain termin
 
 | Metric | Value |
 |--------|-------|
-| Videos processed | 3 demo + pipeline ready for 30 |
+| Videos processed | 26 videos (~1 hour, ~5,000 words) |
 | Total API cost | ~€50 |
+| Traditional estimate | €4,000-6,000 |
+| **Cost savings** | **~€4,000-6,000 (99%)** |
 | Development time | ~2 weeks |
 | Translation accuracy | 95%+ (after thesaurus implementation) |
-| Time saved vs manual dubbing | Estimated 80-90% |
 
 ### Qualitative
 

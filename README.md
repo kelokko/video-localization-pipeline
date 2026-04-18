@@ -135,10 +135,11 @@ video-translator/
 
 | Metric | Value |
 |--------|-------|
-| Videos processed | 30 |
+| Videos processed | 26 (~1 hour, ~5,000 words) |
 | Total API cost | ~€50 |
+| Traditional cost estimate | €4,000-6,000 |
 | Development time | ~2 weeks |
-| Time saved vs manual dubbing | 80-90% |
+| **Cost savings** | **~99%** |
 
 ## Requirements
 
