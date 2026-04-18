@@ -215,9 +215,10 @@ Localized videos uploaded to web hosting, with links stored for frontend integra
 | **AI Pipeline**  | ~€15    | ~€45            | 4-6 weeks*   |
 | **Agency Quote** | €4-5k   | €9.5-15.5k      | 3-4 months** |
 
-\* Running the full pipeline end-to-end for one language requires one prompt to Cursor and takes ~30 minutes. The 4-6 weeks accounts for getting colleagues to review and correct translations in Google Sheets.
 
-\** Agency estimates assume smooth execution only. Real-world projects typically add 2-3 weeks per language for internal review cycles, stakeholder feedback, and change requests.
+ Running the full pipeline end-to-end for one language requires one prompt to Cursor and takes ~30 minutes. The 4-6 weeks accounts for getting colleagues to review and correct translations in Google Sheets.
+
+* Agency estimates assume smooth execution only. Real-world projects typically add 2-3 weeks per language for internal review cycles, stakeholder feedback, and change requests.
 
 **Finnish cost breakdown (verified from API billing):**
 
@@ -242,30 +243,6 @@ Localized videos uploaded to web hosting, with links stored for frontend integra
 - **Sync quality:** 90% automated sync accuracy; remaining 10% quick manual adjustment
 - **Terminology:** 100% consistent with existing Medikro documentation (thanks to thesaurus)
 - **Stakeholder reaction:** Demo approved for full production rollout
-
----
-
-## Skills Demonstrated
-
-### AI-Assisted Development
-
-- Directed Claude (Cursor IDE) to build Python scripts, debug issues, iterate on solutions
-- Prompt engineering for translation quality and length control
-- Tool selection based on cost/quality tradeoffs (ElevenLabs vs alternatives, Bedrock vs OpenAI)
-
-### Technical Execution
-
-- System architecture design and data flow orchestration
-- API integration (ElevenLabs, AWS Bedrock, Google Sheets)
-- Audio/video processing with FFmpeg
-- Server management (SSH, deployment)
-
-### Domain & Business
-
-- Medical terminology management across 4 languages
-- QA workflow design for non-technical collaborators
-- Cost/benefit analysis and stakeholder communication
-- Demo-first validation approach
 
 ---
 
