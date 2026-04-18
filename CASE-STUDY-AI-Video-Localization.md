@@ -77,26 +77,33 @@ A Python script batch-transcribed all 26 audios in under 10 minutes.
 
 ### Step 4: Thesaurus-Aware Translation
 
-Initial attempt with DeepL API revealed a critical issue: **same phrases have very different lengths across languages**. Simple translation wasn't enough — I needed a service that could edit translations to maintain similar phrase lengths.
+**The length problem:** Same phrases have very different lengths across languages. Finnish is often longer than English for the same content, which matters when audio must sync with video timing.
 
-**Solution:** Claude Sonnet via Amazon Bedrock, with a custom prompt that:
+**Attempt 1: DeepL API**
+- Great translation quality
+- But no way to control output length at all
+- Result: Translations that wouldn't fit their time slots
 
-- Respected the medical thesaurus exactly
-- Adjusted phrase lengths to match original timing
-- Maintained natural Finnish phrasing
+**Attempt 2: Claude with length constraints**
+- Switched to Claude Sonnet via Amazon Bedrock
+- Prompt included: thesaurus terms, length targets, timing constraints
+- Claude *could* adjust length, but the results were disappointing — quality was uneven, some translations felt awkward or over-compressed
+- The model was trying to satisfy too many constraints at once
 
-After fine-tuning the prompt on one video, batch-translated all transcripts.
+**Attempt 3: Simplify the task (the breakthrough)**
 
-**Two-pass approach for length control:**
+Frustrated with the results, I decided to stop asking Claude to do everything at once. Instead:
 
-Even with length-aware prompts, some segments still came out too long for their time slots. Rather than over-constraining the initial translation (which would hurt naturalness), I kept a separate "surgical shortening" script that:
-1. Estimates TTS duration (~15 chars/sec)
-2. Identifies segments exceeding their time slot
-3. Asks Claude to shorten *only* those segments
+1. **First pass:** Let Claude translate naturally, respecting only the thesaurus — no length constraints
+2. **Second pass:** A separate script finds segments that are too long and asks Claude to shorten *only those*
 
-This two-pass approach lets the translator focus on accuracy and naturalness first, then surgically fixes length issues — typically only 10-20% of segments need shortening.
+This worked beautifully. The first-pass translations were natural and accurate. The second pass typically only touched 10-20% of segments, making surgical fixes without affecting the rest.
 
-I later learned this is called the **generate-then-edit paradigm**, a [well-established principle in NLP research](https://www.emergentmind.com/topics/generate-then-edit-paradigm). Academic work confirms that forcing constraints during generation "may hurt the expressiveness of the model and lead to potential performance degradation, impacting the fluency and naturalness of the output" ([Garbacea & Mei, 2022](https://arxiv.org/abs/2206.05395)). I reinvented it by accident when I got frustrated enough with constrained translation results to try something different — which I think says something about why the pattern exists in the first place.
+**The academic validation:**
+
+I later learned this is called the **generate-then-edit paradigm**, a [well-established principle in NLP research](https://www.emergentmind.com/topics/generate-then-edit-paradigm). Academic work confirms that forcing constraints during generation "may hurt the expressiveness of the model and lead to potential performance degradation, impacting the fluency and naturalness of the output" ([Garbacea & Mei, 2022](https://arxiv.org/abs/2206.05395)). 
+
+I reinvented it by accident when I got frustrated enough to try something different — which I think says something about why the pattern exists in the first place.
 
 ### Step 5: Voice Cloning & TTS Generation
 
