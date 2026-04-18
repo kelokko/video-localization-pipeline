@@ -131,23 +131,17 @@ video-translator/
 └── apply_qa_fixes.py         # QA: Apply fixes
 ```
 
-## Results
+## Supported Languages
 
-### Single Language (Finnish — Verified)
+The pipeline has been tested with:
+- **Finnish** (production) — 26 videos localized
+- **Swedish** (ready) — thesaurus prepared
+- **Spanish** (ready) — thesaurus prepared
 
-| Metric | Value |
-|--------|-------|
-| Videos processed | 26 (~1 hour, ~5,000 words) |
-| Total API cost | **~€15** |
-| Traditional agency quote | €4,000-6,000 |
-| **Cost savings** | **99.6%** |
-
-### Full Project (3 Languages)
-
-| Approach | Cost | Timeline |
-|----------|------|----------|
-| AI Pipeline (FI + SV + ES) | ~€45 | 4-6 weeks |
-| Agency quote | €9,000-15,000 | 3-4 months |
+Adding new languages requires:
+1. Building a domain-specific thesaurus (`thesaurus/en-XX.json`)
+2. Cloning a native speaker's voice (or using multilingual TTS)
+3. Running the pipeline scripts
 
 ## Requirements
 
