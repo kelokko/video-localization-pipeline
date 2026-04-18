@@ -84,33 +84,49 @@ Google Sheets integration lets non-technical reviewers edit translations with re
 
 ## Usage
 
-### 0. Clone narrator voice (once per voice)
+### Quick Start: Interactive Wizard
+
+The easiest way to run the pipeline:
+
 ```bash
-# Place a clean audio sample in voice_sample.mp3, then:
+python run_pipeline.py
+```
+
+The wizard:
+- Prompts for target language (fi, sv, es, de, or any language code)
+- Validates API keys and configuration
+- Checks what's already done (skips completed steps)
+- Guides you through transcription → translation → QA → video generation
+- Auto-detects changed segments and regenerates only those
+
+### Manual Steps (Advanced)
+
+#### 0. Clone narrator voice (once per voice)
+```bash
 python clone_voice.py
 # Creates ElevenLabs voice clone and saves ID to .voice_id
 ```
 
-### 1. Transcribe source audio
+#### 1. Transcribe source audio
 ```bash
 python batch_transcribe.py
 # Transcribes all audio/*.mp3 files with word-level timestamps
 ```
 
-### 2. Translate with thesaurus
+#### 2. Translate with thesaurus
 ```bash
 python batch_translate_all.py
-# Translates transcripts using medical thesaurus for terminology consistency
+# Translates transcripts using domain thesaurus for terminology consistency
 ```
 
-### 3. Shorten long segments (optional)
+#### 3. Shorten long segments (optional)
 ```bash
-python shorten_segments.py VIDEO_NAME
+python shorten_segments.py
 # Finds segments too long for their time slots and asks Claude to shorten them
 # Only processes segments that exceed the target duration (~10-20% typically)
 ```
 
-### 4. Generate localized video
+#### 4. Generate localized video
 ```bash
 python create_video_with_segments.py VIDEO_NAME [speed]
 # Example: python create_video_with_segments.py 01_Intro 0.9
@@ -143,38 +159,45 @@ python apply_qa_fixes.py                # Apply batch fixes to sheet
 
 ```
 video-translator/
-├── audio/                    # Source audio files (gitignored)
 ├── input/                    # Source video files (gitignored)
 ├── output/                   # Generated videos (gitignored)
+├── audio_{lang}/             # Generated audio segments per language
 ├── transcripts_elevenlabs/   # Transcription JSONs (gitignored)
 ├── translations_final/       # Translation JSONs (gitignored)
 ├── thesaurus/                # Domain terminology
 │   ├── example.json          # Example structure
-│   └── en-fi.json            # Your terms (gitignored)
+│   └── en-{lang}.json        # Your terms (gitignored)
 ├── samples/                  # Example file structures
 │   ├── transcript_example.json
 │   └── translation_example.json
-├── clone_voice.py            # Step 0: Create ElevenLabs voice clone
-├── batch_transcribe.py       # Step 1: Transcribe audio
-├── batch_translate_all.py    # Step 2: Translate with thesaurus
-├── shorten_segments.py       # Step 3: Fix segments that are too long
-├── create_video_with_segments.py  # Step 4: Generate localized video
-├── sheets_sync.py            # QA: Push/pull translations to Google Sheets
-├── qa_translations.py        # QA: AI review for awkward phrasing
-└── apply_qa_fixes.py         # QA: Apply batch fixes
+├── run_pipeline.py           # Interactive wizard (recommended)
+├── lang_config.py            # Language configuration
+├── clone_voice.py            # Create ElevenLabs voice clone
+├── batch_transcribe.py       # Transcribe audio
+├── batch_translate_all.py    # Translate with thesaurus
+├── shorten_segments.py       # Fix segments that are too long
+├── create_video_with_segments.py  # Generate localized video
+├── sheets_sync.py            # Push/pull translations to Google Sheets
+├── qa_translations.py        # AI review for awkward phrasing
+└── apply_qa_fixes.py         # Apply batch fixes
 ```
 
 ## Supported Languages
 
-The pipeline has been tested with:
-- **Finnish** (production) — 26 videos localized
-- **Swedish** (ready) — thesaurus prepared
-- **Spanish** (ready) — thesaurus prepared
+The pipeline works with **any language** supported by ElevenLabs Multilingual v2 (29+ languages).
 
-Adding new languages requires:
-1. Building a domain-specific thesaurus (`thesaurus/en-XX.json`)
-2. Cloning a native speaker's voice (or using multilingual TTS)
-3. Running the pipeline scripts
+Tested in production:
+- **Finnish** — 26 videos localized
+- **Swedish** — thesaurus prepared
+- **Spanish** — thesaurus prepared
+
+Adding a new language:
+1. Set `TARGET_LANG=xx` in `.env` (e.g., `de` for German)
+2. Create a thesaurus at `thesaurus/en-xx.json`
+3. Clone a voice or use the existing multilingual voice
+4. Run `python run_pipeline.py`
+
+The pipeline automatically uses `audio_xx/`, `*_xx.json` naming based on your target language.
 
 ## Requirements
 

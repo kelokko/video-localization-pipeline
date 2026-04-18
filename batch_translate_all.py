@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Batch translate ALL English transcripts to Finnish using thesaurus."""
+"""Batch translate English transcripts to target language using thesaurus."""
 
 import os
 import json
@@ -15,8 +15,21 @@ load_dotenv()
 # Project root (where this script lives)
 PROJECT_ROOT = Path(__file__).parent.resolve()
 
+# Language config
+from lang_config import (
+    get_target_lang, get_lang_name, get_thesaurus_path,
+    get_translation_suffix, get_translation_key
+)
+
+TARGET_LANG = get_target_lang()
+LANG_NAME = get_lang_name()
+THESAURUS_PATH = get_thesaurus_path()
+TRANSLATION_SUFFIX = get_translation_suffix()
+TRANSLATION_KEY = get_translation_key()
+
+print(f"Target language: {LANG_NAME} ({TARGET_LANG})")
+
 # Load thesaurus (required for translation)
-THESAURUS_PATH = PROJECT_ROOT / "thesaurus" / "en-fi.json"
 if not THESAURUS_PATH.exists():
     print(f"ERROR: Thesaurus not found at {THESAURUS_PATH}")
     print("Create your domain-specific thesaurus based on thesaurus/example.json")
@@ -24,7 +37,12 @@ if not THESAURUS_PATH.exists():
 
 with open(THESAURUS_PATH, 'r', encoding='utf-8') as f:
     thesaurus_data = json.load(f)
-    THESAURUS = {item['en'].lower(): item['fi'] for item in thesaurus_data['thesaurus']}
+    # Support both formats: list of {en, TARGET_LANG} or simple {en: TARGET_LANG}
+    if isinstance(thesaurus_data, dict) and 'thesaurus' in thesaurus_data:
+        THESAURUS = {item['en'].lower(): item.get(TARGET_LANG, item.get('fi', '')) 
+                     for item in thesaurus_data['thesaurus']}
+    else:
+        THESAURUS = {k.lower(): v for k, v in thesaurus_data.items()}
 
 # Bedrock client (check credentials)
 if not os.getenv('AWS_ACCESS_KEY') or not os.getenv('AWS_SECRET_ACCESS_KEY'):
@@ -120,9 +138,9 @@ def translate_segment(english_text: str) -> str:
     if not english_text.strip() or english_text.strip().startswith('('):
         return ''
     
-    thesaurus_str = "\n".join([f"- {en} → {fi}" for en, fi in list(THESAURUS.items())[:100]])
+    thesaurus_str = "\n".join([f"- {en} → {target}" for en, target in list(THESAURUS.items())[:100]])
     
-    prompt = f"""Translate this English text to natural Finnish for voiceover narration.
+    prompt = f"""Translate this English text to natural {LANG_NAME} for voiceover narration.
 
 CRITICAL RULES:
 1. Use these EXACT translations for technical terms:
@@ -131,24 +149,24 @@ CRITICAL RULES:
 2. Remove filler words (uh, um, öh)
 3. Remove parenthetical notes like "(instrumental music)"
 4. Keep brand names (Medikro) as-is
-5. Natural spoken Finnish, not literal
+5. Natural spoken {LANG_NAME}, not literal
 6. Keep concise - similar length to English
 
 ENGLISH: {english_text}
 
-Return ONLY the Finnish translation, nothing else."""
+Return ONLY the {LANG_NAME} translation, nothing else."""
 
-    finnish = call_claude(prompt).strip()
-    finnish = re.sub(r'\([^)]*\)', '', finnish)
-    finnish = re.sub(r'\s+', ' ', finnish).strip()
+    translated = call_claude(prompt).strip()
+    translated = re.sub(r'\([^)]*\)', '', translated)
+    translated = re.sub(r'\s+', ' ', translated).strip()
     
-    return finnish
+    return translated
 
 
 def translate_file(input_path: Path) -> dict:
     """Translate a single file and return the result."""
     video_name = input_path.stem
-    output_path = OUTPUT_DIR / f'{video_name}_fin.json'
+    output_path = OUTPUT_DIR / f'{video_name}{TRANSLATION_SUFFIX}.json'
     
     # Skip if already translated
     if output_path.exists():
@@ -170,42 +188,43 @@ def translate_file(input_path: Path) -> dict:
         print(f"    ⚠️  No segments extracted, skipping")
         return None
     
-    print(f"    Found {len(segments)} segments, translating...")
+    print(f"    Found {len(segments)} segments, translating to {LANG_NAME}...")
     
-    finnish_segments = []
+    translated_segments = []
     full_text_parts = []
     
     for i, seg in enumerate(segments):
-        finnish_text = translate_segment(seg['text'])
-        if finnish_text:
-            finnish_segments.append({
+        translated_text = translate_segment(seg['text'])
+        if translated_text:
+            translated_segments.append({
                 'start': seg['start'],
                 'end': seg['end'],
                 'english': seg['text'],
-                'finnish': finnish_text
+                TRANSLATION_KEY: translated_text  # e.g., 'finnish', 'swedish', 'spanish'
             })
-            full_text_parts.append(finnish_text)
+            full_text_parts.append(translated_text)
             print(f"    [{i+1}/{len(segments)}] ✓")
     
-    if not finnish_segments:
+    if not translated_segments:
         print(f"    ⚠️  No segments translated")
         return None
     
     output = {
-        'language_code': 'fin',
+        'language_code': TARGET_LANG,
+        'language_name': LANG_NAME,
         'text': ' '.join(full_text_parts),
-        'segments': finnish_segments,
+        'segments': translated_segments,
         '_meta': {
             'source': str(input_path),
-            'thesaurus': THESAURUS_PATH,
-            'segment_count': len(finnish_segments)
+            'thesaurus': str(THESAURUS_PATH),
+            'segment_count': len(translated_segments)
         }
     }
     
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
     
-    print(f"    ✅ Saved {len(finnish_segments)} segments")
+    print(f"    ✅ Saved {len(translated_segments)} segments")
     return output
 
 

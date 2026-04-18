@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Shorten Finnish segments that are too long for their time slots."""
+"""Shorten translated segments that are too long for their time slots."""
 
 import os
 import json
-import csv
 from pathlib import Path
 from dotenv import load_dotenv
 import boto3
@@ -11,18 +10,24 @@ from botocore.config import Config
 
 load_dotenv()
 
+# Project root
+PROJECT_ROOT = Path(__file__).parent.resolve()
+
+# Language config
+from lang_config import get_target_lang, get_lang_name, get_translation_suffix, get_translation_key
+
+TARGET_LANG = get_target_lang()
+LANG_NAME = get_lang_name()
+TRANSLATION_SUFFIX = get_translation_suffix()
+TRANSLATION_KEY = get_translation_key()
+
 bedrock = boto3.client(
     service_name='bedrock-runtime',
-    region_name='eu-north-1',
+    region_name=os.getenv('AWS_REGION', 'eu-north-1'),
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY'),
     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     config=Config(read_timeout=60)
 )
-
-
-def parse_ts(ts):
-    parts = ts.split(':')
-    return int(parts[0]) * 60 + float(parts[1])
 
 
 def call_claude(prompt):
@@ -38,48 +43,73 @@ def call_claude(prompt):
     return result['content'][0]['text']
 
 
-def shorten_segments(csv_path: Path, output_path: Path):
-    with open(csv_path) as f:
-        segments = list(csv.DictReader(f))
+def shorten_segments_in_json(json_path: Path):
+    """Shorten segments that are too long in a translation JSON file."""
+    with open(json_path) as f:
+        data = json.load(f)
     
-    updated = []
-    for seg in segments:
-        start = parse_ts(seg['start'])
-        end = parse_ts(seg['end'])
+    segments = data.get('segments', [])
+    shortened_count = 0
+    
+    for i, seg in enumerate(segments):
+        start = seg.get('start', 0)
+        end = seg.get('end', 0)
         target_duration = end - start
-        finnish = seg['finnish']
-        estimated_tts = len(finnish) / 15
+        translated = seg.get(TRANSLATION_KEY, seg.get('finnish', ''))  # Fallback for old files
+        estimated_tts = len(translated) / 15  # ~15 chars/sec for TTS
         
-        if estimated_tts > target_duration + 0.5:
+        if estimated_tts > target_duration + 0.5:  # More than 0.5s over
             target_chars = int(target_duration * 14)
-            print(f"Segment {seg['segment_id']}: {len(finnish)} -> ~{target_chars} chars")
+            print(f"  Segment {i+1}: {len(translated)} -> ~{target_chars} chars")
             
-            prompt = f"""Shorten this Finnish text to approximately {target_chars} characters while keeping the same meaning.
-Keep it natural Finnish, suitable for spoken narration.
+            prompt = f"""Shorten this {LANG_NAME} text to approximately {target_chars} characters while keeping the same meaning.
+Keep it natural {LANG_NAME}, suitable for spoken narration.
 
-Original ({len(finnish)} chars): {finnish}
+Original ({len(translated)} chars): {translated}
 
-Return ONLY the shortened Finnish text, nothing else."""
+Return ONLY the shortened {LANG_NAME} text, nothing else."""
             
             shortened = call_claude(prompt).strip()
-            print(f"  Was: {finnish}")
-            print(f"  Now ({len(shortened)}): {shortened}\n")
-            seg['finnish'] = shortened
-        
-        updated.append(seg)
+            print(f"    Was: {translated[:60]}...")
+            print(f"    Now ({len(shortened)}): {shortened[:60]}...")
+            seg[TRANSLATION_KEY] = shortened
+            shortened_count += 1
     
-    with open(output_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=['segment_id', 'start', 'end', 'english', 'finnish'])
-        writer.writeheader()
-        writer.writerows(updated)
+    # Update full text
+    data['text'] = ' '.join(seg.get(TRANSLATION_KEY, seg.get('finnish', '')) for seg in segments)
+    data['segments'] = segments
     
-    print(f"Saved to {output_path}")
+    # Save back
+    with open(json_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    
+    return shortened_count
+
+
+def main():
+    """Shorten all translations that are too long."""
+    print(f"Shortening {LANG_NAME} segments that exceed time slots...\n")
+    
+    translations_dir = PROJECT_ROOT / 'translations_final'
+    translation_files = sorted(translations_dir.glob(f'*{TRANSLATION_SUFFIX}.json'))
+    
+    if not translation_files:
+        print(f"No translation files found matching *{TRANSLATION_SUFFIX}.json")
+        return
+    
+    total_shortened = 0
+    
+    for tf in translation_files:
+        print(f"Processing {tf.name}...")
+        count = shorten_segments_in_json(tf)
+        if count:
+            print(f"  → Shortened {count} segments\n")
+            total_shortened += count
+        else:
+            print(f"  → All segments OK\n")
+    
+    print(f"Done! Shortened {total_shortened} segments total.")
 
 
 if __name__ == '__main__':
-    import sys
-    name = sys.argv[1] if len(sys.argv) > 1 else "00_Cource_intro"
-    shorten_segments(
-        Path(f'translations_new/{name}.csv'),
-        Path(f'translations_new/{name}_fixed.csv')
-    )
+    main()

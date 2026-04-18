@@ -5,7 +5,7 @@ Sync translations to/from Google Sheets.
 Usage:
   python sheets_sync.py push              # Push all translations to sheet
   python sheets_sync.py push 00_Cource_intro  # Push specific video
-  python sheets_sync.py pull              # Pull Esko's edits back to JSONs
+  python sheets_sync.py pull              # Pull edits back to JSONs
 """
 
 import os
@@ -21,6 +21,18 @@ load_dotenv()
 
 # Project root (where this script lives)
 PROJECT_ROOT = Path(__file__).parent.resolve()
+
+# Language config
+from lang_config import (
+    get_target_lang, get_lang_name, get_translation_suffix,
+    get_translation_key, get_audio_dir
+)
+
+TARGET_LANG = get_target_lang()
+LANG_NAME = get_lang_name()
+TRANSLATION_SUFFIX = get_translation_suffix()
+TRANSLATION_KEY = get_translation_key()
+AUDIO_DIR_NAME = get_audio_dir()
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT = PROJECT_ROOT / 'service-account.json'
@@ -44,7 +56,7 @@ def get_client():
 
 def find_translation_file(video_name: str) -> Path:
     """Find the translation file for a video."""
-    path = TRANSLATIONS_DIR / f"{video_name}_fin.json"
+    path = TRANSLATIONS_DIR / f"{video_name}{TRANSLATION_SUFFIX}.json"
     if path.exists():
         return path
     return None
@@ -101,23 +113,23 @@ def extract_segments_from_words(words: list, gap_threshold: float = 10.0) -> lis
     return segments
 
 def load_translation(filepath: Path, video_name: str) -> tuple:
-    """Load translation JSON and return (data, segments with english+finnish)."""
+    """Load translation JSON and return (data, segments with english+translated)."""
     data = json.loads(filepath.read_text())
     segments = data.get('segments', [])
     return data, segments
 
 def push_to_sheet(gc, video_filter: str = None):
     """Push translations to Google Sheet."""
-    print("Opening spreadsheet...")
+    print(f"Opening spreadsheet (language: {LANG_NAME})...")
     spreadsheet = gc.open_by_key(SPREADSHEET_ID)
     
     # Get all translation files
-    all_files = sorted(TRANSLATIONS_DIR.glob('*_fin.json'))
+    all_files = sorted(TRANSLATIONS_DIR.glob(f'*{TRANSLATION_SUFFIX}.json'))
     
     # Build video list
     videos = {}
     for f in all_files:
-        name = f.stem.replace('_fin', '')
+        name = f.stem.replace(TRANSLATION_SUFFIX, '')
         videos[name] = f
     
     if video_filter:
@@ -128,7 +140,7 @@ def push_to_sheet(gc, video_filter: str = None):
     # Clear and add headers
     sheet = spreadsheet.sheet1
     sheet.clear()
-    headers = ['Video', 'Segment', 'Start', 'End', 'Slot (sec)', 'Max Chars (~15.5/s)', 'English', 'Finnish', 'Char Count', 'Status']
+    headers = ['Video', 'Segment', 'Start', 'End', 'Slot (sec)', 'Max Chars (~15.5/s)', 'English', LANG_NAME, 'Char Count', 'Status']
     sheet.append_row(headers)
     
     all_rows = []
@@ -152,13 +164,13 @@ def push_to_sheet(gc, video_filter: str = None):
             slot = round(end - start, 2)
             max_chars = int(slot * 15.5)  # 14 chars/sec adjusted for 0.9x TTS speed
             english = seg.get('english', '')
-            finnish = seg.get('finnish', '')
-            char_count = len(finnish)
+            translated = seg.get(TRANSLATION_KEY, '')
+            char_count = len(translated)
             status = 'OVER' if char_count > max_chars else 'OK'
             
             all_rows.append([
                 video_name, i+1, start, end, slot, max_chars,
-                english, finnish, char_count, status
+                english, translated, char_count, status
             ])
     
     if all_rows:
@@ -168,8 +180,8 @@ def push_to_sheet(gc, video_filter: str = None):
     print(f"\nDone! View at: https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit")
 
 def pull_from_sheet(gc):
-    """Pull Esko's edits from sheet back to JSON files."""
-    print("Opening spreadsheet...")
+    """Pull edits from sheet back to JSON files and delete changed audio."""
+    print(f"Opening spreadsheet (language: {LANG_NAME})...")
     spreadsheet = gc.open_by_key(SPREADSHEET_ID)
     sheet = spreadsheet.sheet1
     
@@ -188,6 +200,9 @@ def pull_from_sheet(gc):
     
     print(f"Found {len(videos)} videos in sheet")
     
+    audio_deleted = 0
+    segments_updated = 0
+    
     for video_name, rows in videos.items():
         filepath = find_translation_file(video_name)
         if not filepath:
@@ -201,21 +216,33 @@ def pull_from_sheet(gc):
         
         # Update segments with sheet data
         for row in rows:
-            seg_num = int(row.get('Segment', 0)) - 1
+            seg_num = int(row.get('Segment', 0)) - 1  # Sheet is 1-indexed
             if 0 <= seg_num < len(segments):
-                new_finnish = row.get('Finnish', '')
-                if new_finnish and new_finnish != segments[seg_num].get('finnish', ''):
-                    print(f"    Segment {seg_num+1}: updated Finnish text")
-                    segments[seg_num]['finnish'] = new_finnish
+                new_text = row.get(LANG_NAME, '')
+                old_text = segments[seg_num].get(TRANSLATION_KEY, '')
+                
+                if new_text and new_text != old_text:
+                    print(f"    Segment {seg_num+1}: updated {LANG_NAME} text")
+                    segments[seg_num][TRANSLATION_KEY] = new_text
+                    segments_updated += 1
+                    
+                    # Delete stale audio file so it gets regenerated
+                    audio_file = PROJECT_ROOT / AUDIO_DIR_NAME / video_name / f'seg_{seg_num:02d}.mp3'
+                    if audio_file.exists():
+                        audio_file.unlink()
+                        print(f"      → Deleted stale audio: {audio_file.name}")
+                        audio_deleted += 1
         
         # Update full text
-        data['text'] = ' '.join(seg.get('finnish', '') for seg in segments)
+        data['text'] = ' '.join(seg.get(TRANSLATION_KEY, '') for seg in segments)
         data['segments'] = segments
         
         # Save back
         filepath.write_text(json.dumps(data, ensure_ascii=False, indent=2))
     
-    print("\nDone! JSON files updated with Esko's edits.")
+    print(f"\nDone! {segments_updated} segments updated, {audio_deleted} audio files deleted.")
+    if audio_deleted > 0:
+        print("Run create_video_with_segments.py to regenerate changed audio.")
 
 def main():
     if len(sys.argv) < 2:

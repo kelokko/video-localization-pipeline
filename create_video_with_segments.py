@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Finnish video using segment-based timing."""
+"""Generate localized video using segment-based timing."""
 
 import os
 import json
@@ -12,6 +12,18 @@ load_dotenv()
 
 # Project root (where this script lives)
 PROJECT_ROOT = Path(__file__).parent.resolve()
+
+# Language config
+from lang_config import (
+    get_target_lang, get_lang_name, get_translation_suffix,
+    get_translation_key, get_audio_dir
+)
+
+TARGET_LANG = get_target_lang()
+LANG_NAME = get_lang_name()
+TRANSLATION_SUFFIX = get_translation_suffix()
+TRANSLATION_KEY = get_translation_key()
+AUDIO_DIR_NAME = get_audio_dir()
 
 client = ElevenLabs(api_key=os.getenv('ELEVEN_API_KEY'))
 
@@ -76,14 +88,17 @@ def get_duration(file_path: str) -> float:
     return float(result.stdout.strip())
 
 
-def create_video_with_segments(input_name: str, translation_name: str, output_suffix: str = '_FI_v2', speed: float = 0.9, save_audio: bool = True):
-    """Create Finnish video with segments placed at correct timestamps."""
+def create_video_with_segments(input_name: str, translation_name: str, output_suffix: str = None, speed: float = 0.9, save_audio: bool = True):
+    """Create localized video with segments placed at correct timestamps."""
+    if output_suffix is None:
+        output_suffix = f'_{TARGET_LANG.upper()}'
+    
     video_path = PROJECT_ROOT / 'input' / f'{input_name}.mp4'
     translation_path = PROJECT_ROOT / 'translations_final' / f'{translation_name}.json'
     output_path = PROJECT_ROOT / 'output' / f'{input_name}{output_suffix}.mp4'
     
     # Save audio to permanent location for remixing without API
-    audio_dir = PROJECT_ROOT / 'audio_fi' / input_name
+    audio_dir = PROJECT_ROOT / AUDIO_DIR_NAME / input_name
     audio_dir.mkdir(parents=True, exist_ok=True)
     
     # Load translation with segments
@@ -112,14 +127,15 @@ def create_video_with_segments(input_name: str, translation_name: str, output_su
             audio_duration = get_duration(str(audio_file))
         else:
             print(f"  [{i+1}/{len(segments)}] Generating TTS for segment at {seg['start']:.1f}s...")
-            print(f"    Text: {seg['finnish'][:50]}...")
+            seg_text = seg.get(TRANSLATION_KEY, seg.get('finnish', ''))  # Fallback for old files
+            print(f"    Text: {seg_text[:50]}...")
             
             # Get context from adjacent segments (helps natural breathing)
-            prev_text = segments[i-1]['finnish'] if i > 0 else None
-            next_text = segments[i+1]['finnish'] if i < len(segments)-1 else None
+            prev_text = segments[i-1].get(TRANSLATION_KEY, segments[i-1].get('finnish', '')) if i > 0 else None
+            next_text = segments[i+1].get(TRANSLATION_KEY, segments[i+1].get('finnish', '')) if i < len(segments)-1 else None
             
             generate_segment_audio(
-                seg['finnish'], str(audio_file), speed=speed,
+                seg_text, str(audio_file), speed=speed,
                 previous_text=prev_text, next_text=next_text
             )
             audio_duration = get_duration(str(audio_file))
@@ -181,22 +197,25 @@ def create_video_with_segments(input_name: str, translation_name: str, output_su
         print(f"FFmpeg error: {result.stderr}")
         return
     
-    # Audio files kept in audio_fi/{video_name}/ for remixing
+    # Audio files kept in audio_{lang}/{video_name}/ for remixing
     print(f"\nDone! Output: {output_path}")
     print(f"Audio files saved in: {audio_dir}/")
     print(f"Output size: {output_path.stat().st_size / 1024 / 1024:.1f} MB")
 
 
-def remix_video(input_name: str, translation_name: str, output_suffix: str, timing_overrides: dict = None):
+def remix_video(input_name: str, translation_name: str, output_suffix: str = None, timing_overrides: dict = None):
     """Remix existing audio files with different timing - NO API CALLS!
     
     timing_overrides: dict of {segment_index: new_start_time}
     Example: {5: 39.5} to delay segment 6 (index 5) to start at 39.5s
     """
+    if output_suffix is None:
+        output_suffix = f'_{TARGET_LANG.upper()}_remix'
+    
     video_path = PROJECT_ROOT / 'input' / f'{input_name}.mp4'
     translation_path = PROJECT_ROOT / 'translations_final' / f'{translation_name}.json'
     output_path = PROJECT_ROOT / 'output' / f'{input_name}{output_suffix}.mp4'
-    audio_dir = PROJECT_ROOT / 'audio_fi' / input_name
+    audio_dir = PROJECT_ROOT / AUDIO_DIR_NAME / input_name
     
     if not audio_dir.exists():
         print(f"Error: No audio files found in {audio_dir}/")
@@ -280,7 +299,8 @@ if __name__ == '__main__':
     video_name = sys.argv[1]
     speed = float(sys.argv[2]) if len(sys.argv) > 2 else 0.9  # Default: winning 0.9x
     
-    translation_name = f'{video_name}_fin'
-    suffix = '_FI' if speed == 0.9 else f'_FI_{int(speed*100)}'
+    translation_name = f'{video_name}{TRANSLATION_SUFFIX}'
+    suffix = f'_{TARGET_LANG.upper()}' if speed == 0.9 else f'_{TARGET_LANG.upper()}_{int(speed*100)}'
     
+    print(f"Creating {LANG_NAME} video for {video_name}...")
     create_video_with_segments(video_name, translation_name, output_suffix=suffix, speed=speed)
