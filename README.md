@@ -94,13 +94,20 @@ python batch_transcribe.py
 python batch_translate_all.py
 ```
 
-### 3. Generate localized video
+### 3. Shorten long segments (optional)
+```bash
+python shorten_segments.py VIDEO_NAME
+# Finds segments too long for their time slots and asks Claude to shorten them
+# Only processes segments that exceed the target duration
+```
+
+### 4. Generate localized video
 ```bash
 python create_video_with_segments.py VIDEO_NAME [speed]
 # Example: python create_video_with_segments.py 01_Intro 0.9
 ```
 
-### 4. QA workflow (optional)
+### 5. QA workflow (optional)
 ```bash
 python sheets_sync.py push              # Push translations to sheet
 # ... reviewer makes edits ...

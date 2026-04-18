@@ -87,6 +87,15 @@ Initial attempt with DeepL API revealed a critical issue: **same phrases have ve
 
 After fine-tuning the prompt on one video, batch-translated all transcripts.
 
+**Two-pass approach for length control:**
+
+Even with length-aware prompts, some segments still came out too long for their time slots. Rather than over-constraining the initial translation (which would hurt naturalness), I kept a separate "surgical shortening" script that:
+1. Estimates TTS duration (~15 chars/sec)
+2. Identifies segments exceeding their time slot
+3. Asks Claude to shorten *only* those segments
+
+This two-pass approach lets the translator focus on accuracy and naturalness first, then surgically fixes length issues — typically only 10-20% of segments need shortening.
+
 ### Step 5: Voice Cloning & TTS Generation
 
 **Voice Cloning:** Uploaded English audio to ElevenLabs, which analyzed and created a voice profile mimicking the original narrator.
