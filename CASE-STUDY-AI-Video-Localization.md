@@ -81,8 +81,9 @@ A Python script batch-transcribed all 26 audios in under 10 minutes.
 
 **Attempt 1: DeepL API**
 - Great translation quality
-- But no way to control output length at all
-- Result: Translations that wouldn't fit their time slots
+- But no way to control output length
+- And crucially: no way to enforce the medical thesaurus (DeepL can't be instructed to use specific terminology)
+- Result: Good translations, but inconsistent medical terms and wrong lengths
 
 **Attempt 2: Claude with length constraints**
 - Switched to Claude Sonnet via Amazon Bedrock
