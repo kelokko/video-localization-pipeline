@@ -104,23 +104,27 @@ After fine-tuning the prompt on one video, batch-translated all transcripts.
 This was the trickiest part, requiring several iterations:
 
 **Attempt 1: Single audio track replacement**
+
 - Generated Finnish audio for full transcript, replaced English track
 - Problem: Finnish skipped all pauses and filler words ("uh", "um") present in English
 - Result: Audio finished way before video ended
 
 **Attempt 2: Word-for-word timestamp mapping**
+
 - Mapped each Finnish word to exact timestamp of corresponding English word
 - Problem: Finnish is agglutinative (one Finnish word often equals 2-3 English words)
 - Problem: Filler words replaced with silence, but timestamps remained
 - Result: Weird abrupt pauses between words — sounded robotic
 
 **Attempt 3: Sentence-level segments**
+
 - Switched from word-level to sentence-level segments
 - Generated TTS for whole sentences (more natural prosody)
 - Placed each sentence at its original start timestamp
 - Better, but still had gaps where English had sighs and filler words
 
 **Winning formula (v3):**
+
 - **0.9x speed:** Slowed Finnish audio to 90% speed → lasts slightly longer, naturally fills gaps where English had "uhh" and pauses
 - **Context parameters:** Passed `previous_text` and `next_text` to ElevenLabs API → natural breathing between segments instead of abrupt stops
 - **Period endings:** Discovered that text ending with ellipsis ("...") caused gasping sounds; forcing period (".") endings produced clean stops
@@ -203,16 +207,17 @@ Localized videos uploaded to web hosting, with links stored for frontend integra
 
 ## Results
 
-### Cost Comparison (Verified)
+### Cost Comparison
 
 
-| Approach         | Finnish | All 3 Languages | Timeline    |
-| ---------------- | ------- | --------------- | ----------- |
-| **AI Pipeline**  | ~€15    | ~€45            | 4-6 weeks   |
-| **Agency Quote** | €4-5k   | €9.5-15.5k      | 3-4 months* |
+| Approach         | Finnish | All 3 Languages | Timeline     |
+| ---------------- | ------- | --------------- | ------------ |
+| **AI Pipeline**  | ~€15    | ~€45            | 4-6 weeks*   |
+| **Agency Quote** | €4-5k   | €9.5-15.5k      | 3-4 months** |
 
+\* Running the full pipeline end-to-end for one language requires one prompt to Cursor and takes ~30 minutes. The 4-6 weeks accounts for getting colleagues to review and correct translations in Google Sheets.
 
-*Agency timeline assumes smooth execution. Real-world projects typically add 2-3 weeks per language for internal review cycles, stakeholder feedback, and change requests.
+\** Agency estimates assume smooth execution only. Real-world projects typically add 2-3 weeks per language for internal review cycles, stakeholder feedback, and change requests.
 
 **Finnish cost breakdown (verified from API billing):**
 
