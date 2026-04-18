@@ -1,0 +1,24 @@
+{
+  "_comment": "Example translation structure with timing for TTS",
+  "language_code": "fin",
+  "text": "Tervetuloa spirometrian koulutuskurssille. Tällä oppitunnilla käsittelemme kalibroinnin perusteet.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 2.1,
+      "english": "Welcome to the spirometry training course.",
+      "finnish": "Tervetuloa spirometrian koulutuskurssille."
+    },
+    {
+      "start": 2.5,
+      "end": 5.0,
+      "english": "In this lesson, we will cover the basics of calibration.",
+      "finnish": "Tällä oppitunnilla käsittelemme kalibroinnin perusteet."
+    }
+  ],
+  "_meta": {
+    "source": "transcripts_elevenlabs/example.json",
+    "thesaurus": "thesaurus/en-fi.json",
+    "segment_count": 2
+  }
+}

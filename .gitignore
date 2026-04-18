@@ -1,0 +1,71 @@
+# Environment variables & credentials
+.env
+service-account.json
+.google_token.json
+.voice_id
+*.keys.json
+
+# Audio/video files (large, client-specific)
+audio/
+audio_fi/
+input/
+output/
+*.mp4
+*.mp3
+*.wav
+
+# Transcripts & translations (client data)
+transcripts_elevenlabs/
+transcript_elevenlabs_fi_perplexity/
+translations_final/
+
+# Client-specific thesaurus (keep only example)
+thesaurus/en-*.json
+!thesaurus/example.json
+
+# Client-specific files
+medikro-*.json
+medikro-*.csv
+test-*.json
+PROMPT-*.md
+UAT/
+timing_limits.csv
+*course content*.md
+
+# Transcripts & translations (various formats - client data)
+transcripts/
+translations/
+translations_new/
+
+# Audio editing project files
+Sounds/
+*.pkf
+*.sesx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Experimental scripts (iterations that led to final versions)
+# Keep only: batch_transcribe.py, batch_translate_all.py, create_video_with_segments.py
+transcribe.py
+transcribe_elevenlabs.py
+translate_bedrock.py
+translate_remaining.py
+translate_with_thesaurus.py
+translate-to-fi-perplexity.py
+translate_to_csv.py
+create_finnish_video.py
+create_finnish_video_gentle.py
+create_finnish_video_natural.py
+create_finnish_videos.py
+generate_finnish_audio.py
+generate_finnish_audio_synced.py

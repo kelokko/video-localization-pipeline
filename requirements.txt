@@ -1,0 +1,9 @@
+# Core dependencies
+python-dotenv>=1.0.0
+boto3>=1.34.0
+elevenlabs>=1.0.0
+
+# Google Sheets integration
+gspread>=6.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0

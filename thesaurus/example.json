@@ -1,0 +1,9 @@
+{
+  "_comment": "Example thesaurus structure. Replace with your domain-specific terms.",
+  "thesaurus": [
+    {"en": "spirometry", "fi": "spirometria", "category": "medical"},
+    {"en": "flow transducer", "fi": "virtausanturi", "category": "equipment"},
+    {"en": "calibration check", "fi": "kalibroinnin tarkistus", "category": "procedure"},
+    {"en": "bacterial filter", "fi": "bakteerifiltteri", "category": "equipment"}
+  ]
+}
