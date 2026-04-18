@@ -133,13 +133,21 @@ video-translator/
 
 ## Results
 
+### Single Language (Finnish — Verified)
+
 | Metric | Value |
 |--------|-------|
 | Videos processed | 26 (~1 hour, ~5,000 words) |
-| Total API cost | ~€50 |
-| Traditional cost estimate | €4,000-6,000 |
-| Development time | ~2 weeks |
-| **Cost savings** | **~99%** |
+| Total API cost | **~€15** |
+| Traditional agency quote | €4,000-6,000 |
+| **Cost savings** | **99.6%** |
+
+### Full Project (3 Languages)
+
+| Approach | Cost | Timeline |
+|----------|------|----------|
+| AI Pipeline (FI + SV + ES) | ~€45 | 4-6 weeks |
+| Agency quote | €9,000-15,000 | 3-4 months |
 
 ## Requirements
 

@@ -2,7 +2,7 @@
 
 ## Building an Automated Dubbing System for Medical E-Learning Content
 
-**Project Duration:** 2 weeks (development) | **Cost:** ~€50 in API fees  
+**Project Duration:** 2 weeks (development) | **Cost:** ~€15 in API fees (ElevenLabs Creator + AWS Bedrock)  
 **Client:** Medikro Oy (Medical Device Manufacturer)  
 **Role:** Full-stack implementation – strategy, development, deployment
 
@@ -127,16 +127,34 @@ The translator was instructed to use exact thesaurus matches and maintain termin
 
 ## Results
 
-### Quantitative
+### Quantitative (Finnish — Verified)
 
 | Metric | Value |
 |--------|-------|
 | Videos processed | 26 videos (~1 hour, ~5,000 words) |
-| Total API cost | ~€50 |
-| Traditional estimate | €4,000-6,000 |
-| **Cost savings** | **~€4,000-6,000 (99%)** |
+| API cost breakdown | ElevenLabs Creator (50% off): €11 + STT overage: €2 + Bedrock: €0.50 |
+| **Total API cost** | **~€15** |
+| Traditional agency estimate | €4,000-6,000 |
+| **Cost savings** | **99.6%** |
 | Development time | ~2 weeks |
-| Translation accuracy | 95%+ (after thesaurus implementation) |
+
+### Multi-Language Projection (Finnish + Swedish + Spanish)
+
+| Approach | Cost | Timeline (realistic) |
+|----------|------|---------------------|
+| **AI Pipeline** | ~€45 total | 4-6 weeks |
+| **Agency** | €9,000-15,000 | 3-4 months |
+
+**Why agency timelines are longer in practice:**
+- Internal review cycles after each phase (2-3 weeks per language)
+- Stakeholder feedback loops ("can we change this word?")
+- Re-recording requests = scheduling delays + fees
+- Email coordination overhead with external vendors
+
+**Why AI pipeline is faster:**
+- Self-service iteration (regenerate in minutes, not weeks)
+- No external dependencies for changes
+- QA happens in Google Sheets, fixes applied same-day
 
 ### Qualitative
 
