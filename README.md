@@ -84,35 +84,59 @@ Google Sheets integration lets non-technical reviewers edit translations with re
 
 ## Usage
 
+### 0. Clone narrator voice (once per voice)
+```bash
+# Place a clean audio sample in voice_sample.mp3, then:
+python clone_voice.py
+# Creates ElevenLabs voice clone and saves ID to .voice_id
+```
+
 ### 1. Transcribe source audio
 ```bash
 python batch_transcribe.py
+# Transcribes all audio/*.mp3 files with word-level timestamps
 ```
 
 ### 2. Translate with thesaurus
 ```bash
 python batch_translate_all.py
+# Translates transcripts using medical thesaurus for terminology consistency
 ```
 
 ### 3. Shorten long segments (optional)
 ```bash
 python shorten_segments.py VIDEO_NAME
 # Finds segments too long for their time slots and asks Claude to shorten them
-# Only processes segments that exceed the target duration
+# Only processes segments that exceed the target duration (~10-20% typically)
 ```
 
 ### 4. Generate localized video
 ```bash
 python create_video_with_segments.py VIDEO_NAME [speed]
 # Example: python create_video_with_segments.py 01_Intro 0.9
+# Uses 0.9x speed by default (fills timing gaps from removed filler words)
 ```
 
 ### 5. QA workflow (optional)
+
+**Push translations for human review:**
 ```bash
-python sheets_sync.py push              # Push translations to sheet
-# ... reviewer makes edits ...
-python sheets_sync.py pull              # Pull edits back to JSON
-python create_video_with_segments.py VIDEO_NAME  # Regenerate
+python sheets_sync.py push              # Push all translations to Google Sheet
+python sheets_sync.py push VIDEO_NAME   # Push specific video only
+```
+
+**Reviewer edits in Google Sheets** — character counts and length warnings shown automatically.
+
+**Pull edits and regenerate:**
+```bash
+python sheets_sync.py pull              # Pull edits back to JSON files
+python create_video_with_segments.py VIDEO_NAME  # Regenerate with fixes
+```
+
+**AI-assisted QA (optional):**
+```bash
+python qa_translations.py               # Claude reviews translations for awkward phrasing
+python apply_qa_fixes.py                # Apply batch fixes to sheet
 ```
 
 ## Project Structure
@@ -130,12 +154,14 @@ video-translator/
 ├── samples/                  # Example file structures
 │   ├── transcript_example.json
 │   └── translation_example.json
+├── clone_voice.py            # Step 0: Create ElevenLabs voice clone
 ├── batch_transcribe.py       # Step 1: Transcribe audio
-├── batch_translate_all.py    # Step 2: Translate segments
-├── create_video_with_segments.py  # Step 3: Generate video
-├── sheets_sync.py            # QA: Sync with Google Sheets
-├── qa_translations.py        # QA: AI review pass
-└── apply_qa_fixes.py         # QA: Apply fixes
+├── batch_translate_all.py    # Step 2: Translate with thesaurus
+├── shorten_segments.py       # Step 3: Fix segments that are too long
+├── create_video_with_segments.py  # Step 4: Generate localized video
+├── sheets_sync.py            # QA: Push/pull translations to Google Sheets
+├── qa_translations.py        # QA: AI review for awkward phrasing
+└── apply_qa_fixes.py         # QA: Apply batch fixes
 ```
 
 ## Supported Languages
